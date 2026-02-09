@@ -4,11 +4,36 @@ import { Plus } from 'lucide-react'
 import Image from "next/image"
 import { useRouter } from "next/navigation";
 import { useState } from "react"
+import { createPlayground } from "../actions";
+import TemplateSelectionModal from "./template-selection-modal";
+import { toast } from "sonner";
 
 const AddNewButton = () => {
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [selectedTemplate, setSelectedTemplate] = useState<{
+        title: string;
+        template: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "HONO" | "ANGULAR";
+        description?: string;
+    } | null>(null)
+    const router = useRouter()
+
+    const handleSubmit = async (data: {
+        title: string;
+        template: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "HONO" | "ANGULAR";
+        description?: string;
+    }) => {
+        setSelectedTemplate(data)
+        const res = await createPlayground(data);
+        toast.success("Playground created successfully");
+        console.log("Creating new playground:", data)
+        setIsModalOpen(false)
+        router.push(`/playground/${res?.id}`)
+    }
+
     return (
         <>
             <div
+                onClick={() => setIsModalOpen(true)}
                 className="group px-6 py-6 flex flex-row justify-between items-center border rounded-lg bg-muted cursor-pointer 
         transition-all duration-300 ease-in-out
         hover:bg-background hover:border-[#E93F3F] hover:scale-[1.02]
@@ -39,6 +64,12 @@ const AddNewButton = () => {
                     />
                 </div>
             </div>
+
+            <TemplateSelectionModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleSubmit}
+            />
         </>
     )
 }
