@@ -2,18 +2,42 @@
 
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import TemplateFileTree from '@/features/playground/components/template-file-tree';
+import { useFileExplorer } from '@/features/playground/hooks/useFileExplorer';
 import { usePlayground } from '@/features/playground/hooks/usePlayground';
+import { TemplateFile, TemplateFolder } from '@/features/playground/types';
 import { useParams } from 'next/navigation';
-import React from 'react'
+import React, { useCallback } from 'react'
 
 const Page = () => {
     const { id } = useParams<{ id: string }>();
     const { playgroundData, templateData, isLoading, error, saveTemplateData } = usePlayground(id);
-    console.log(templateData);
+    const {
+        activeFileId,
+        closeAllFiles,
+        openFile,
+        closeFile,
+        editorContent,
+        updateFileContent,
+        handleAddFile,
+        handleAddFolder,
+        handleDeleteFile,
+        handleDeleteFolder,
+        handleRenameFile,
+        handleRenameFolder,
+        openFiles,
+        setTemplateData,
+        setActiveFileId,
+        setPlaygroundId,
+        setOpenFiles,
+    } = useFileExplorer();
+
     return (
         <div>
             <>
-                {/* TODO: TEMPLATEFILE TREE */}
+                <TemplateFileTree
+                    data={templateData!}
+                />
 
                 <SidebarInset>
                     <header className="flex items-center h-16 gap-2 px-4 border-b shrink-0">
