@@ -43,7 +43,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { DeleteDialog, NewFileDialog, NewFolderDialog, RenameFolderDialog } from "./template-file-tree"
+import { DeleteDialog, NewFileDialog, NewFolderDialog, RenameFileDialog, RenameFolderDialog } from "./template-file-tree"
 
 interface TemplateFile {
     filename: string
@@ -155,7 +155,7 @@ const TemplateNode = ({
                     </DropdownMenu>
                 </div>
 
-                {/* <RenameFileDialog
+                <RenameFileDialog
                     isOpen={isRenameDialogOpen}
                     onClose={() => setIsRenameDialogOpen(false)}
                     onRename={handleRenameSubmit}
@@ -172,7 +172,7 @@ const TemplateNode = ({
                     itemName={fileName}
                     confirmLabel="Delete"
                     cancelLabel="Cancel"
-                /> */}
+                />
             </SidebarMenuItem>
         )
     } else {
