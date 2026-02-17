@@ -50,6 +50,9 @@ import {
 } from "@/components/ui/resizable";
 import { TemplateFile } from '@/features/playground/types';
 import PlaygroundEditor from '@/features/playground/components/playground-editor';
+import { useWebContainer } from '@/features/webContainers/hooks/useWebContainer';
+import WebContainerPreview from '@/features/webContainers/components/webcontainer-preview';
+import LoadingStep from '@/components/ui/loader';
 
 const Page = () => {
     const { id } = useParams<{ id: string }>();
@@ -75,6 +78,15 @@ const Page = () => {
         setOpenFiles,
     } = useFileExplorer();
 
+    const {
+        serverUrl,
+        isLoading: containerLoading,
+        error: containerError,
+        instance,
+        writeFileSync,
+        // @ts-ignore
+    } = useWebContainer({ templateData });
+
     useEffect(() => {
         setPlaygroundId(id);
     }, [id, setPlaygroundId]);
@@ -91,6 +103,47 @@ const Page = () => {
     const handleFileSelect = (file: TemplateFile) => {
         openFile(file);
     };
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+                <AlertCircle className="w-12 h-12 mb-4 text-red-500" />
+                <h2 className="mb-2 text-xl font-semibold text-red-600">
+                    Something went wrong
+                </h2>
+                <p className="mb-4 text-gray-600">{error}</p>
+                <Button onClick={() => window.location.reload()} variant="destructive">
+                    Try Again
+                </Button>
+            </div>
+        );
+    }
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+                <div className="w-full max-w-md p-6 border rounded-lg shadow-sm">
+                    <h2 className="mb-6 text-xl font-semibold text-center">
+                        Loading Playground
+                    </h2>
+                    <div className="mb-8">
+                        <LoadingStep
+                            currentStep={1}
+                            step={1}
+                            label="Loading playground data"
+                        />
+                        <LoadingStep
+                            currentStep={2}
+                            step={2}
+                            label="Setting up environment"
+                        />
+                        <LoadingStep currentStep={3} step={3} label="Ready to code" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <TooltipProvider>
@@ -251,6 +304,24 @@ const Page = () => {
                                                 }
                                             />
                                         </ResizablePanel>
+
+                                        {isPreviewVisible && (
+                                            <>
+                                                <ResizableHandle />
+                                                <ResizablePanel defaultSize={50}>
+                                                    <WebContainerPreview
+                                                        templateData={templateData!}
+                                                        instance={instance}
+                                                        writeFileSync={writeFileSync}
+                                                        isLoading={containerLoading}
+                                                        error={containerError}
+                                                        serverUrl={serverUrl!}
+                                                        forceResetup={false}
+                                                    />
+                                                </ResizablePanel>
+                                            </>
+                                        )}
+
                                     </ResizablePanelGroup>
                                 </div>
                             </div>
