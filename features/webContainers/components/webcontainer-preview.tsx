@@ -5,8 +5,13 @@ import React, { useEffect, useState, useRef } from "react";
 import { transformToWebContainerFormat } from "../hooks/transformer";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import TerminalComponent from './terminal';
 import { TemplateFolder } from '@/features/playground/types';
+import dynamic from "next/dynamic";
+
+const TerminalComponent = dynamic(
+    () => import("./terminal"),
+    { ssr: false }
+);
 
 interface WebContainerPreviewProps {
     templateData: TemplateFolder;
