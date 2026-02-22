@@ -31,9 +31,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import Image from "next/image";
 import {
     Tooltip,
@@ -1142,32 +1139,23 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
 
                                             <div className="prose-sm prose prose-invert max-w-none">
                                                 <ReactMarkdown
-                                                    remarkPlugins={[remarkGfm, remarkMath]}
-                                                    rehypePlugins={[rehypeKatex]}
                                                     components={{
-                                                        code: ({
-                                                            children,
-                                                            className,
-                                                            // @ts-ignore
-                                                            inline: _inline,
-                                                        }) => (
-                                                            <EnhancedCodeBlock
-                                                                className={className}
-                                                                inline={_inline as boolean}
-                                                                onInsert={
-                                                                    onInsertCode
-                                                                        ? (code) => handleInsertCode(code)
-                                                                        : undefined
-                                                                }
-                                                                onRun={onRunCode}
-                                                                theme={theme}
-                                                            >
-                                                                {String(children)}
-                                                            </EnhancedCodeBlock>
-                                                        ),
+                                                        p: ({ children }: any) => <div>{children}</div>,
+
+                                                        code({ inline, className, children }: any) {
+                                                            return inline ? (
+                                                                <code className="px-1 bg-gray-200 rounded">
+                                                                    {children}
+                                                                </code>
+                                                            ) : (
+                                                                <pre className="p-3 overflow-x-auto text-white bg-black rounded">
+                                                                    <code>{children}</code>
+                                                                </pre>
+                                                            )
+                                                        },
                                                     }}
                                                 >
-                                                    {msg.content}
+                                                    {msg.content as string}
                                                 </ReactMarkdown>
                                             </div>
 

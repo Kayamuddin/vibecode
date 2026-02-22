@@ -15,110 +15,83 @@ interface EnhancePromptRequest {
 }
 
 async function generateAIResponse(messages: ChatMessage[]) {
-    const systemPrompt = `You are an expert AI coding assistant. You help developers with:
-- Code explanations and debugging
-- Best practices and architecture advice
-- Writing clean, efficient code
-- Troubleshooting errors
-- Code reviews and optimizations
-
-Always provide clear, practical answers. When showing code, use proper formatting with language-specific syntax.
-Keep responses concise but comprehensive. Use code blocks with language specification when providing code examples.`
-
-    const fullMessages = [{ role: "system", content: systemPrompt }, ...messages]
-
-    const prompt = fullMessages.map((msg) => `${msg.role}: ${msg.content}`).join("\n\n")
-
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 15000)
+    const systemPrompt = `You are an expert AI coding assistant. Give short, clear answers with code.`
 
     try {
-        const response = await fetch("http://localhost:11434/api/generate", {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 8000)
+
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
+                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: "codellama:latest",
-                prompt,
-                stream: false,
-                options: {
-                    temperature: 0.7,
-                    top_p: 0.9,
-                    max_tokens: 1000,
-                    num_predict: 1000,
-                    repeat_penalty: 1.1,
-                    context_length: 4096,
-                },
+                model: "deepseek/deepseek-chat",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    ...messages
+                ],
+                temperature: 0.7,
+                max_tokens: 300,
             }),
-            signal: controller.signal,
+            signal: controller.signal
         })
 
-        clearTimeout(timeoutId)
+        clearTimeout(timeout)
 
         if (!response.ok) {
-            const errorText = await response.text()
-            console.error("Error from AI model API:", errorText)
-            throw new Error(`AI model API error: ${response.status} - ${errorText}`)
+            const error = await response.text()
+            throw new Error(error)
         }
 
         const data = await response.json()
-        if (!data.response) {
-            throw new Error("No response from AI model")
-        }
-        return data.response.trim()
+        return data.choices?.[0]?.message?.content || "No response"
+
     } catch (error) {
-        clearTimeout(timeoutId)
-        if ((error as Error).name === "AbortError") {
-            throw new Error("Request timeout: AI model took too long to respond")
-        }
-        console.error("AI generation error:", error)
+        console.error("OpenRouter error:", error)
         throw error
     }
 }
 
 async function enhancePrompt(request: EnhancePromptRequest) {
-    const enhancementPrompt = `You are a prompt enhancement assistant. Take the user's basic prompt and enhance it to be more specific, detailed, and effective for a coding AI assistant.
+    const enhancementPrompt = `
+Rewrite this coding prompt to be clearer and more detailed.
 
-Original prompt: "${request.prompt}"
+Prompt: "${request.prompt}"
 
-Context: ${request.context ? JSON.stringify(request.context, null, 2) : "No additional context"}
-
-Enhanced prompt should:
-- Be more specific and detailed
-- Include relevant technical context
-- Ask for specific examples or explanations
-- Be clear about expected output format
-- Maintain the original intent
-
-Return only the enhanced prompt, nothing else.`
+Return only improved prompt.
+`
 
     try {
-        const response = await fetch("http://localhost:11434/api/generate", {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
+                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: "codellama:latest",
-                prompt: enhancementPrompt,
-                stream: false,
-                options: {
-                    temperature: 0.3,
-                    max_tokens: 500,
-                },
+                model: "deepseek/deepseek-chat", // ⚡ FAST + FREE
+                messages: [
+                    { role: "user", content: enhancementPrompt }
+                ],
+                temperature: 0.3,
+                max_tokens: 200,
             }),
         })
 
         if (!response.ok) {
-            throw new Error("Failed to enhance prompt")
+            const error = await response.text()
+            throw new Error(error)
         }
 
         const data = await response.json()
-        return data.response?.trim() || request.prompt
+        return data.choices?.[0]?.message?.content?.trim() || request.prompt
+
     } catch (error) {
         console.error("Prompt enhancement error:", error)
-        return request.prompt // Return original if enhancement fails
+        return request.prompt
     }
 }
 
@@ -141,7 +114,7 @@ export async function POST(req: NextRequest) {
 
         const validHistory = Array.isArray(history)
             ? history.filter(
-                (msg: any) =>
+                (msg) =>
                     msg &&
                     typeof msg === "object" &&
                     typeof msg.role === "string" &&

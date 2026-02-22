@@ -3,7 +3,7 @@ import { WebContainer } from '@webcontainer/api';
 import { TemplateFolder } from '@/features/playground/types';
 
 interface UseWebContainerProps {
-    templateData: TemplateFolder;
+    templateData: TemplateFolder | null;
 }
 
 interface UseWebContainerReturn {

@@ -17,18 +17,11 @@ import {
     Save,
     X,
     Settings,
-    Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -56,20 +49,24 @@ import { findFilePath } from "@/features/playground/lib";
 import ToggleAI from "@/features/playground/components/toggle-ai";
 import { useAISuggestions } from "@/features/ai/hooks/useAISuggestions";
 
+type FileItem = {
+    name: string;
+    content?: string;
+    children?: FileItem[];
+};
+
 const Page = () => {
+    const aiSuggestions = useAISuggestions();
     const { id } = useParams<{ id: string }>();
     const [isPreviewVisible, setIsPreviewVisible] = useState(true);
     const { playgroundData, templateData, isLoading, error, saveTemplateData } =
         usePlayground(id);
-
-    const aiSuggestion = useAISuggestions();
 
     const {
         activeFileId,
         closeAllFiles,
         openFile,
         closeFile,
-        editorContent,
         updateFileContent,
         handleAddFile,
         handleAddFolder,
@@ -90,8 +87,6 @@ const Page = () => {
         error: containerError,
         instance,
         writeFileSync,
-
-        // @ts-ignore
     } = useWebContainer({ templateData });
     const lastSyncedContent = useRef<Map<string, string>>(new Map());
 
@@ -204,20 +199,18 @@ const Page = () => {
                     JSON.stringify(latestTemplateData)
                 );
 
-                // @ts-ignore
-                const updateFileContent = (items: any[]) =>
-                    // @ts-ignore
-                    items.map((item) => {
-                        if ("folderName" in item) {
-                            return { ...item, items: updateFileContent(item.items) };
-                        } else if (
-                            item.filename === fileToSave.filename &&
-                            item.fileExtension === fileToSave.fileExtension
-                        ) {
-                            return { ...item, content: fileToSave.content };
+                const updateFileContent = (items: FileItem[]): FileItem[] => {
+                    return items.map(item => {
+                        if (item.children) {
+                            return {
+                                ...item,
+                                children: updateFileContent(item.children)
+                            };
                         }
                         return item;
                     });
+                };
+
                 updatedTemplateData.items = updateFileContent(
                     updatedTemplateData.items
                 );
@@ -230,9 +223,8 @@ const Page = () => {
                     }
                 }
 
-                const newTemplateData = await saveTemplateData(updatedTemplateData);
-                // @ts-ignore
-                setTemplateData(newTemplateData || updatedTemplateData);
+                await saveTemplateData(updatedTemplateData);
+                setTemplateData(updatedTemplateData);
 
                 const updatedOpenFiles = openFiles.map((f) =>
                     f.id === targetFileId
@@ -250,7 +242,6 @@ const Page = () => {
                     `Saved ${fileToSave.filename}.${fileToSave.fileExtension}`
                 );
             } catch (error) {
-                console.error("Error saving file:", error);
                 toast.error(
                     `Failed to save ${fileToSave.filename}.${fileToSave.fileExtension}`
                 );
@@ -280,6 +271,7 @@ const Page = () => {
             await Promise.all(unsavedFiles.map((f) => handleSave(f.id)));
             toast.success(`Saved ${unsavedFiles.length} file(s)`);
         } catch (error) {
+            console.error(error);
             toast.error("Failed to save some files");
         }
     };
@@ -415,9 +407,9 @@ const Page = () => {
 
                                 {/* TODO: TOGGLEAI */}
                                 <ToggleAI
-                                    isEnabled={aiSuggestion.isEnabled}
-                                    onToggle={aiSuggestion.toggleEnabled}
-                                    suggestionLoading={aiSuggestion.isLoading}
+                                    isEnabled={aiSuggestions.isEnabled}
+                                    onToggle={aiSuggestions.toggleEnabled}
+                                    suggestionLoading={aiSuggestions.isLoading}
                                 />
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -504,18 +496,6 @@ const Page = () => {
                                                 content={activeFile?.content || ""}
                                                 onContentChange={(value) =>
                                                     activeFileId && updateFileContent(activeFileId, value)
-                                                }
-                                                suggestion={aiSuggestion.suggestion}
-                                                suggestionLoading={aiSuggestion.isLoading}
-                                                suggestionPosition={aiSuggestion.position}
-                                                onAcceptSuggestion={(editor, monaco) =>
-                                                    aiSuggestion.acceptSuggestion(editor, monaco)
-                                                }
-                                                onRejectSuggestion={(editor) =>
-                                                    aiSuggestion.rejectSuggestion(editor)
-                                                }
-                                                onTriggerSuggestion={(type, editor) =>
-                                                    aiSuggestion.fetchSuggestion(type, editor)
                                                 }
                                             />
                                         </ResizablePanel>

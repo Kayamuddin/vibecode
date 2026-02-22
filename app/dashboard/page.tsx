@@ -7,21 +7,28 @@ import { deleteProjectById, editProjectById } from "../../features/dashboard/act
 
 const DashboardMainPage = async () => {
   const playgrounds = await getAllPlaygroundForUser();
+  const formattedProjects = (playgrounds || []).map((p) => ({
+    ...p,
+    description: p.description ?? "",
+    user: {
+      ...p.user,
+      name: p.user.name ?? "Anonymous",
+      image: p.user.image ?? "", // ✅ FIX HERE
+    },
+  }));
 
   return (
-    <div className="flex flex-col justify-start items-center min-h-screen mx-auto max-w-7xl px-4 py-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+    <div className="flex flex-col items-center justify-start min-h-screen px-4 py-10 mx-auto max-w-7xl">
+      <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
         <AddNewButton />
         <AddRepo />
       </div>
-      <div className="mt-10 flex flex-col justify-center items-center w-full">
+      <div className="flex flex-col items-center justify-center w-full mt-10">
         {playgrounds && playgrounds.length === 0 ? (
           <EmptyState title="No projects found" description="Create a new Project to get started" imageSrc="/empty-state.svg" />
         ) : (
           <ProjectTable
-            // @ts-ignore
-            // TODO: NEED TO UPDATE THE TYPES OF THE PLAYGROUND
-            projects={playgrounds || []}
+            projects={formattedProjects}
             onDeleteProject={deleteProjectById}
             onUpdateProject={editProjectById}
             onDuplicateProject={duplicateProjectById}

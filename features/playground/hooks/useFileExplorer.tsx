@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { toast } from "sonner";
 import { TemplateFile, TemplateFolder } from '../types';
-import { SaveUpdatedCode } from "../actions";
 import { generateFileId } from "../lib";
-import { usePlayground } from "./usePlayground";
 
 interface OpenFile extends TemplateFile {
     id: string;
